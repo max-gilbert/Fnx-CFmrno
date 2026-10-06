@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Sociogramme d'équipe — Handball</title><style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#14181f;--mut:#5c6675;--ac:#d9480f;--bd:#dde1e7}
+@media(prefers-color-scheme:dark){:root{--bg:#12161c;--card:#1b212a;--tx:#eef1f5;--mut:#9aa5b5;--ac:#ff8a4c;--bd:#2d3643}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}h1{font-size:1.35rem;margin:.2em 0}h2{font-size:1.05rem;margin:0 0 .6em}
+.sub,.mut{color:var(--mut);font-size:.9rem}.sub{margin:0 0 1em}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:0 0 14px}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block}
+.btn.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}.btn:disabled{opacity:.5}
+select,input,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+textarea{min-height:120px;font-family:ui-monospace,monospace;font-size:.85rem}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}@media(max-width:560px){.row,.cibles{grid-template-columns:1fr!important}}
+label small{color:var(--mut);display:block;margin-bottom:2px}
+.vol{color:var(--ac);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+.q{margin:0 0 16px}.q p{margin:0 0 8px;font-weight:500}.err{color:#e03131;font-size:.9rem;min-height:1.2em}
+.code{word-break:break-all;font-family:ui-monospace,monospace;background:var(--bg);border:1px dashed var(--ac);border-radius:8px;padding:10px;font-size:.85rem}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}td.c{text-align:center}
+.pill{display:inline-block;min-width:24px;text-align:center;border-radius:99px;padding:0 8px;font-weight:700;color:#fff}
+.c1{background:#2b8a3e}.c2{background:#74b816}.c3{background:#f08c00}.c4{background:#e8590c}.c5{background:#c92a2a}
+.cibles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style></head><body><main>
+<h1>Sociogramme d'équipe — Handball</h1>
+<p class="sub">Questionnaire confidentiel · Réponds spontanément, il n'y a pas de bonne ou mauvaise réponse. Cite jusqu'à 3 coéquipiers par ordre de préférence. Tu ne peux pas te désigner toi-même.</p>
+<div id="app"></div>
+<script>
+/* ===== À MODIFIER SI BESOIN ===== */
+// Liste des joueurs (ordre alphabétique). Ne pas changer l'ordre après le début de la passation.
+const JOUEURS = ["ALLEGRET Leni", "ANDUZE Mattéo", "CANITROT Marius", "DERMIGNY Zach", "DITTA Enzo", "FIRMESSE Idris", "GINESTET Lucas", "JACQUES ANTOINE Lukas", "LUCINA Julien", "MARQUET BAURES Louis", "MAURICE Isaac", "ORTH Noah", "RENAUD Siméo", "SALTEL Gabin", "SECK Issa"];
+// Envoi automatique vers un Google Forms (facultatif, voir les explications). Laisser vide pour n'utiliser que le code de réponse.
+const FORM = { action: "", code: "", choix: [] };
+/* ================================ */
+const Q = [
+ ["Volet A — Performance & efficacité sur le terrain","Dans une fin de match tendue (score serré, balle de match), à quel(s) coéquipier(s) fais-tu le plus confiance pour prendre le tir décisif ou organiser la dernière attaque ?"],
+ ["","Quel(s) coéquipier(s) sais-tu pouvoir compter à 100 % pour maintenir l'intensité défensive et appliquer les consignes tactiques ?"],
+ ["Volet B — Relationnel & vie de groupe","Qui réussit le mieux à remonter le moral du groupe, apaiser les tensions et créer une dynamique positive (vestiaire, déplacements…) ?"],
+ ["","Avec quel(s) coéquipier(s) as-tu la meilleure relation humaine, ou partages-tu le plus de moments en dehors des terrains ?"]];
+const N = JOUEURS.length, $ = s => document.querySelector(s), app = $('#app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let h = '<div class="card"><label><small>Ton numéro de code (donné par le staff)</small><input id="code" type="number" min="1" max="'+N+'" inputmode="numeric" placeholder="ex. 7"></label></div><div class="card">';
+Q.forEach((q,qi)=>{
+  if (q[0]) h += '<div class="vol">'+esc(q[0])+'</div>';
+  h += '<div class="q"><p>'+(qi+1)+'. '+esc(q[1])+'</p><div class="row">';
+  ['1er','2e','3e'].forEach((l,k)=>{ h += '<label><small>'+l+' choix</small><select data-q="'+qi+'"><option value="">—</option>'+JOUEURS.map((n,i)=>'<option value="'+i+'">'+esc(n)+'</option>').join('')+'</select></label>'; });
+  h += '</div></div>';
+});
+h += '<div class="err" id="err"></div><button class="btn" id="send">Valider mes réponses</button></div><div id="done"></div>';
+app.innerHTML = h;
+$('#send').onclick = async () => {
+  const err = $('#err'); err.textContent = '';
+  const code = parseInt($('#code').value, 10);
+  if (!(code >= 1 && code <= N)) return err.textContent = 'Entre ton numéro de code (entre 1 et '+N+').';
+  const picks = [], ans = [];
+  for (let q = 0; q < 4; q++){
+    const v = [...document.querySelectorAll('select[data-q="'+q+'"]')].map(s => s.value), ch = v.filter(x => x !== '');
+    if (!ch.length) return err.textContent = 'Question '+(q+1)+' : choisis au moins un coéquipier.';
+    if (new Set(ch).size < ch.length) return err.textContent = 'Question '+(q+1)+' : un même coéquipier ne peut pas être cité deux fois.';
+    if ((v[1] && !v[0]) || (v[2] && !v[1])) return err.textContent = 'Question '+(q+1)+' : remplis les choix dans l\'ordre (1er, puis 2e, puis 3e).';
+    picks.push(...v); ans.push(ch.join(','));
+  }
+  $('#send').disabled = true;
+  const out = 'SM2.' + btoa(code + '|' + ans.join('|'));
+  let sent = false;
+  if (FORM.action && FORM.code && FORM.choix.length === 12){
+    const p = new URLSearchParams(); p.set(FORM.code, String(code));
+    picks.forEach((v,k) => { if (v !== '') p.set(FORM.choix[k], JOUEURS[v]); });
+    try { await fetch(FORM.action, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p}); sent = true; } catch(e){}
+  }
+  $('#done').innerHTML = '<div class="card"><h2>Merci !</h2>' + (sent ? '<p>Tes réponses ont été transmises au staff.</p><p class="mut">Par précaution, garde ce code : le staff pourra te le demander.</p>' : '<p>Dernière étape : envoie ce code au staff (message, WhatsApp, mail…). Il contient tes réponses.</p>') + '<div class="code">'+out+'</div><p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="cp">Copier le code</button><a class="btn sec" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(out)+'">Envoyer par WhatsApp</a></p></div>';
+  $('#cp').onclick = () => { const t = $('#cp'); const ok = () => { t.textContent = 'Copié ✓'; }; try { navigator.clipboard.writeText(out).then(ok); } catch(e){} };
+  $('#done').scrollIntoView({behavior:'smooth'});
+};
+</script></main></body></html>
