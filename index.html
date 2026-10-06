@@ -30,7 +30,7 @@ label small{color:var(--mut);display:block;margin-bottom:2px}
 // Liste des joueurs (ordre alphabétique). Ne pas changer l'ordre après le début de la passation.
 const JOUEURS = ["ALLEGRET Leni", "ANDUZE Mattéo", "CANITROT Marius", "DERMIGNY Zach", "DITTA Enzo", "FIRMESSE Idris", "GINESTET Lucas", "JACQUES ANTOINE Lukas", "LUCINA Julien", "MARQUET BAURES Louis", "MAURICE Isaac", "ORTH Noah", "RENAUD Siméo", "SALTEL Gabin", "SECK Issa"];
 // Envoi automatique vers un Google Forms (facultatif, voir les explications). Laisser vide pour n'utiliser que le code de réponse.
-const FORM = { action: "", code: "", choix: [] };
+const FORM = { action: "", joueur: "", choix: [] };
 /* ================================ */
 const Q = [
  ["Volet A — Performance & efficacité sur le terrain","Dans une fin de match tendue (score serré, balle de match), à quel(s) coéquipier(s) fais-tu le plus confiance pour prendre le tir décisif ou organiser la dernière attaque ?"],
@@ -39,7 +39,7 @@ const Q = [
  ["","Avec quel(s) coéquipier(s) as-tu la meilleure relation humaine, ou partages-tu le plus de moments en dehors des terrains ?"]];
 const N = JOUEURS.length, $ = s => document.querySelector(s), app = $('#app');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let h = '<div class="card"><label><small>Ton numéro de code (donné par le staff)</small><input id="code" type="number" min="1" max="'+N+'" inputmode="numeric" placeholder="ex. 7"></label></div><div class="card">';
+let h = '<div class="card"><label><small>Qui es-tu ?</small><select id="me"><option value="">— Choisis ton nom —</option>'+JOUEURS.map((n,i)=>'<option value="'+i+'">'+esc(n)+'</option>').join('')+'</select></label></div><div class="card">';
 Q.forEach((q,qi)=>{
   if (q[0]) h += '<div class="vol">'+esc(q[0])+'</div>';
   h += '<div class="q"><p>'+(qi+1)+'. '+esc(q[1])+'</p><div class="row">';
@@ -48,23 +48,25 @@ Q.forEach((q,qi)=>{
 });
 h += '<div class="err" id="err"></div><button class="btn" id="send">Valider mes réponses</button></div><div id="done"></div>';
 app.innerHTML = h;
+$('#me').onchange = () => { const me = $('#me').value; document.querySelectorAll('select[data-q]').forEach(s => { [...s.options].forEach(o => { o.disabled = (o.value !== '' && o.value === me); }); if (s.value === me) s.value = ''; }); };
 $('#send').onclick = async () => {
   const err = $('#err'); err.textContent = '';
-  const code = parseInt($('#code').value, 10);
-  if (!(code >= 1 && code <= N)) return err.textContent = 'Entre ton numéro de code (entre 1 et '+N+').';
+  const me = $('#me').value;
+  if (me === '') return err.textContent = 'Choisis ton nom dans la liste.';
   const picks = [], ans = [];
   for (let q = 0; q < 4; q++){
     const v = [...document.querySelectorAll('select[data-q="'+q+'"]')].map(s => s.value), ch = v.filter(x => x !== '');
     if (!ch.length) return err.textContent = 'Question '+(q+1)+' : choisis au moins un coéquipier.';
     if (new Set(ch).size < ch.length) return err.textContent = 'Question '+(q+1)+' : un même coéquipier ne peut pas être cité deux fois.';
+    if (ch.includes(me)) return err.textContent = 'Question '+(q+1)+' : tu ne peux pas te désigner toi-même.';
     if ((v[1] && !v[0]) || (v[2] && !v[1])) return err.textContent = 'Question '+(q+1)+' : remplis les choix dans l\'ordre (1er, puis 2e, puis 3e).';
     picks.push(...v); ans.push(ch.join(','));
   }
   $('#send').disabled = true;
-  const out = 'SM2.' + btoa(code + '|' + ans.join('|'));
+  const out = 'SM3.' + btoa(me + '|' + ans.join('|'));
   let sent = false;
-  if (FORM.action && FORM.code && FORM.choix.length === 12){
-    const p = new URLSearchParams(); p.set(FORM.code, String(code));
+  if (FORM.action && FORM.joueur && FORM.choix.length === 12){
+    const p = new URLSearchParams(); p.set(FORM.joueur, JOUEURS[me]);
     picks.forEach((v,k) => { if (v !== '') p.set(FORM.choix[k], JOUEURS[v]); });
     try { await fetch(FORM.action, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:p}); sent = true; } catch(e){}
   }
